@@ -132,7 +132,9 @@ namespace bot
             
             var heroesFullMana = botPlayer.getHeroesFullMana();
 
-            if (heroesFullMana.Any(x => buff.Contains(x.id)))
+            var anyAIRSPIRIT = myheroesAlive.Any(x => x.id == HeroIdEnum.AIR_SPIRIT && !x.isFullMana() && x.attack >= 11);
+
+            if (heroesFullMana.Any(x => buff.Contains(x.id)) && !anyAIRSPIRIT)
             {
                 var myheroCarryOrAoe = myheroesAlive.FirstOrDefault(x => carry.Contains(x.id) | aoe.Contains(x.id));
                 TaskSchedule(delaySwapGem, _ => SendCastSkill(heroesFullMana.FirstOrDefault(), myheroCarryOrAoe));
@@ -141,6 +143,10 @@ namespace bot
             foreach (var heroFullMana in heroesFullMana)
             {
                 log("heroFullMana Id: " + heroFullMana.id);
+                if (buff.Contains(heroFullMana.id))
+                {
+                    continue;
+                }
                 if (heroFullMana.attack >= enemyTotalHp)
                 {
                     TaskSchedule(delaySwapGem, _ => SendCastSkill(heroFullMana));
