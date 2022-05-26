@@ -148,21 +148,24 @@ namespace bot
                 }
                 if (ap.Contains(heroFullMana.id)) 
                 {
-                    if (heroImba != null)
+                    if (!enemyheroesAlive.Any(x => buff.Contains(x.id)) | enemyHeroMaxAttack.attack > 12 | heroFullMana.hp < 10)
                     {
-                        TaskSchedule(delaySwapGem, _ => SendCastSkill(heroFullMana, heroImba));
-                        return;
-                    }
-                    if (heroAP != null)
-                    {
-                        TaskSchedule(delaySwapGem, _ => SendCastSkill(heroFullMana, heroAP));
-                        return;
-                    }
+                        if (heroImba != null)
+                        {
+                            TaskSchedule(delaySwapGem, _ => SendCastSkill(heroFullMana, heroImba));
+                            return;
+                        }
+                        if (heroAP != null)
+                        {
+                            TaskSchedule(delaySwapGem, _ => SendCastSkill(heroFullMana, heroAP));
+                            return;
+                        }
 
-                    if (enemyheroesAlive.Count() == 1 | enemyHeroMaxAttack.attack > 10 | (!anyHeroBuff && !anyHeroCarry))
-                    {
-                        TaskSchedule(delaySwapGem, _ => SendCastSkill(heroFullMana, enemyHeroMaxAttack));
-                        return;
+                        if (enemyheroesAlive.Count() == 1 | enemyHeroMaxAttack.attack > 10 | (!anyHeroBuff && !anyHeroCarry))
+                        {
+                            TaskSchedule(delaySwapGem, _ => SendCastSkill(heroFullMana, enemyHeroMaxAttack));
+                            return;
+                        }
                     }
                     continue;
                 }
