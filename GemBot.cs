@@ -134,7 +134,8 @@ namespace bot
 
             var anyAIRSPIRIT = myheroesAlive.Any(x => x.id == HeroIdEnum.AIR_SPIRIT && !x.isFullMana() && x.attack >= 11);
 
-            if (heroesFullMana.Any(x => buff.Contains(x.id)) && !anyAIRSPIRIT)
+            if (heroesFullMana.Any(x => buff.Contains(x.id)) && 
+                ( (!anyAIRSPIRIT && !enemyheroesAlive.Any(x => x.id == HeroIdEnum.FIRE_SPIRIT)) | enemyheroesAlive.Count() == 1) )
             {
                 var myheroCarryOrAoe = myheroesAlive.FirstOrDefault(x => carry.Contains(x.id) | aoe.Contains(x.id));
                 TaskSchedule(delaySwapGem, _ => SendCastSkill(heroesFullMana.FirstOrDefault(), myheroCarryOrAoe));
