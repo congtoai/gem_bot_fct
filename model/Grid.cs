@@ -42,7 +42,7 @@ namespace bot {
             List<GemSwapInfo> listMatchGem = suggestMatch();
             //get gemtype myheros
             HashSet<GemType> myHeroGemType = new HashSet<GemType>();
-            var myHeroAlive = myheroes.Where(x => x.isAlive() && !x.isFullMana()).Reverse();
+            var myHeroAlive = myheroes.Where(x => x.isAlive() && !x.isFullMana());//.Reverse();
             foreach (var hero in myHeroAlive)
             {
                 foreach (var gt in hero.gemTypes)
