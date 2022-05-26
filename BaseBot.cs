@@ -14,10 +14,10 @@ namespace bot
         private SmartFox sfs;
         private const string IP = "172.16.100.112";
         // private const string IP = "10.10.10.18";
-        private const string username = "sao.kirito";
+        private const string username = "bot_fct";
 
         //private const string token = "eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJhbmgubmd1eWVudGhpaG9uZyIsImF1dGgiOiJST0xFX1VTRVIiLCJMQVNUX0xPR0lOX1RJTUUiOjE2NTI4NTc4MjY1MzAsImV4cCI6MTY1Mjk0NDIyNn0.APDcJTDo7RrnIxL8ChHS_HyUXDxDRyBSj68txmkWtFpC3ISUFgqBESmKiW203hShaDF6wLKBwrlb0tekiJbKQg";
-        private const string token = "eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJ0b2FpLm5ndXllbmNvbmciLCJhdXRoIjoiUk9MRV9VU0VSIiwiTEFTVF9MT0dJTl9USU1FIjoxNjUzMDE3Mjc0MTA4LCJleHAiOjE2NTQ4MTcyNzR9.dlmf9Ay6ntGjYfnxmSNySUliIkYYvaN3n-Qq0YzE7UE_lR11WbwAPSYfztK_-NY6rP8zo7DuzBIFsQPWSqDkpw";
+        private const string token = "eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJ0b2FpLm5ndXllbmNvbmciLCJhdXRoIjoiUk9MRV9VU0VSIiwiTEFTVF9MT0dJTl9USU1FIjoxNjUzNTYxMTI0MTI4LCJleHAiOjE2NTUzNjExMjR9.duP5120vTRC56sWcvQQonNn46vv3097_IRfkRynKsvjB5LiTBORnz5kEis8V2UJsWHdo7RssUjBdZbWwuG17aQ";
         //private const string token = "bot";
         private const int TIME_INTERVAL_IN_MILLISECONDS = 1000;
         private const int ENEMY_PLAYER_ID = 0;
