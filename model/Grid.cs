@@ -75,8 +75,6 @@ namespace bot {
 
             GemSwapInfo maxSword = listMatchGem.Where(gemMatch => gemMatch.type == GemType.SWORD).OrderByDescending(x => x.sizeMatch).FirstOrDefault();
 
-            GemSwapInfo maxEnemyGemType = listMatchGem.Where(gemMatch => enemyHeroGemType.Contains(gemMatch.type)).OrderByDescending(x => x.sizeMatch).ThenByDescending(x => x.hasGemModifier).FirstOrDefault();
-
             if (maxSword?.sizeMatch > 4)
             {
                 return maxSword.getIndexSwapGem();
@@ -101,13 +99,22 @@ namespace bot {
             {
                 return maxSword.getIndexSwapGem();
             }
-            if (maxGemType != null)
+            foreach (var item in myHeroGemType)
             {
-                return maxGemType.getIndexSwapGem();
+                var matchGem = listMatchGem.Where(x => x.type == item).OrderByDescending(x => x.sizeMatch).FirstOrDefault();
+                if (matchGem != null)
+                {
+                    return matchGem.getIndexSwapGem();
+                }
             }
-            if (maxEnemyGemType != null)
+
+            foreach (var item in enemyHeroGemType)
             {
-                return maxEnemyGemType.getIndexSwapGem();
+                var matchGem = listMatchGem.Where(x => x.type == item).OrderByDescending(x => x.sizeMatch).FirstOrDefault();
+                if (matchGem != null)
+                {
+                    return matchGem.getIndexSwapGem();
+                }
             }
             if (maxSword != null)
             {
