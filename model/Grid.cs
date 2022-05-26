@@ -1,5 +1,6 @@
 
 using Sfs2X.Entities.Data;
+using System.Linq;
 
 namespace bot {
     public class Grid
@@ -7,12 +8,24 @@ namespace bot {
         private List<Gem> gems = new List<Gem>();
         private ISFSArray gemsCode;
         public HashSet<GemType> gemTypes = new HashSet<GemType>();
-        private HashSet<GemType> myHeroGemType;
+        public List<Hero> myheroes;
+        public List<Hero> enemyheroes;
+        public List<GemModifier> listGemModifier = new List<GemModifier>() 
+        { 
+            GemModifier.MANA,
+            GemModifier.HIT_POINT,
+            GemModifier.BUFF_ATTACK,
+            GemModifier.EXTRA_TURN, 
+            GemModifier.EXPLODE_HORIZONTAL,
+            GemModifier.EXPLODE_VERTICAL,
+            GemModifier.EXPLODE_SQUARE,
+        };
 
-        public Grid(ISFSArray gemsCode,ISFSArray gemModifiers,  HashSet<GemType> gemTypes)
+        public Grid(ISFSArray gemsCode,ISFSArray gemModifiers, List<Hero> myheroes, List<Hero> enemyheroes)
         {
             updateGems(gemsCode, gemModifiers);
-            this.myHeroGemType = gemTypes;
+            this.myheroes = myheroes;
+            this.enemyheroes = enemyheroes;
         }
 
         public void updateGems(ISFSArray gemsCode, ISFSArray gemModifiers) {
@@ -27,33 +40,137 @@ namespace bot {
 
         public Pair<int> recommendSwapGem() {
             List<GemSwapInfo> listMatchGem = suggestMatch();
+            //get gemtype myheros
+            HashSet<GemType> myHeroGemType = new HashSet<GemType>();
+            var myHeroAlive = myheroes.Where(x => x.isAlive() && !x.isFullMana()).Reverse();
+            foreach (var hero in myHeroAlive)
+            {
+                foreach (var gt in hero.gemTypes)
+                {
+                    myHeroGemType.Add((GemType)gt);
+                }
+            }
+            //get gemtype enemyheros
+            HashSet<GemType> enemyHeroGemType = new HashSet<GemType>();
+            var enemyHeroAlive = enemyheroes.Where(x => x.isAlive()).OrderBy(x => x.isFullMana());
+            foreach (var hero in enemyHeroAlive)
+            {
+                foreach (var gt in hero.gemTypes)
+                {
+                    enemyHeroGemType.Add((GemType)gt);
+                }
+            }
 
-            Console.WriteLine("recommendSwapGem " + listMatchGem.Count);
             if (listMatchGem.Count == 0) {
                 return new Pair<int>(-1, -1);
             }
 
-            GemSwapInfo matchGemSizeThanFour = listMatchGem.Where(gemMatch => gemMatch.sizeMatch > 4).FirstOrDefault();
-            if (matchGemSizeThanFour != null) {
-                return matchGemSizeThanFour.getIndexSwapGem();
-            }
-            GemSwapInfo matchGemSizeThanThree = listMatchGem.Where(gemMatch => gemMatch.sizeMatch > 3).FirstOrDefault();
-            if (matchGemSizeThanThree != null) {
-                return matchGemSizeThanThree.getIndexSwapGem();
-            }
-            GemSwapInfo matchGemSword = listMatchGem.Where(gemMatch => gemMatch.type == GemType.SWORD).FirstOrDefault();
-            if (matchGemSword != null) {
-                return matchGemSword.getIndexSwapGem();
-            }
+            GemSwapInfo haveFiveGemType = listMatchGem.Where(gemMatch => myHeroGemType.Contains(gemMatch.type) && gemMatch.sizeMatch > 4).OrderByDescending(x => x.hasGemModifier).FirstOrDefault();
+            GemSwapInfo gemModifier = listMatchGem.Where(gemMatch => myHeroGemType.Contains(gemMatch.type) && gemMatch.hasGemModifier).OrderByDescending(x => x.sizeMatch).FirstOrDefault();
 
-            foreach (GemType type in myHeroGemType) {
-                GemSwapInfo matchGem = listMatchGem.Where(gemMatch => gemMatch.type == type).FirstOrDefault();
-                        //listMatchGem.stream().filter(gemMatch -> gemMatch.getType() == type).findFirst();
-                if (matchGem != null) {
-                    return matchGem.getIndexSwapGem();
+            GemSwapInfo maxGemType = listMatchGem.Where(gemMatch => myHeroGemType.Contains(gemMatch.type)).OrderByDescending(x => x.sizeMatch).FirstOrDefault();
+
+            Console.WriteLine("maxGemType.sizeMatch" + maxGemType?.sizeMatch);
+            Console.WriteLine("gemModifier" + gemModifier?.type);
+
+            GemSwapInfo maxSword = listMatchGem.Where(gemMatch => gemMatch.type == GemType.SWORD).OrderByDescending(x => x.sizeMatch).FirstOrDefault();
+
+            GemSwapInfo maxEnemyGemType = listMatchGem.Where(gemMatch => enemyHeroGemType.Contains(gemMatch.type)).OrderByDescending(x => x.sizeMatch).ThenByDescending(x => x.hasGemModifier).FirstOrDefault();
+
+            if (maxSword?.sizeMatch > 4)
+            {
+                return maxSword.getIndexSwapGem();
+            }
+            if (haveFiveGemType != null)
+            {
+                return haveFiveGemType.getIndexSwapGem();
+            }
+            if (myheroes.Where(x => x.isAlive()).FirstOrDefault()?.attack >= enemyheroes.Where(x => x.isAlive()).FirstOrDefault()?.hp | 
+                myheroes.Where(x => x.isAlive()).FirstOrDefault()?.hp <= enemyheroes.Where(x => x.isAlive()).FirstOrDefault()?.attack)
+            {
+                if (maxSword != null)
+                {
+                    return maxSword.getIndexSwapGem();
                 }
             }
+            if (gemModifier != null)
+            {
+                return gemModifier.getIndexSwapGem();
+            }
+            if (maxSword != null && maxSword?.sizeMatch > 3)
+            {
+                return maxSword.getIndexSwapGem();
+            }
+            if (maxGemType != null)
+            {
+                return maxGemType.getIndexSwapGem();
+            }
+            if (maxEnemyGemType != null)
+            {
+                return maxEnemyGemType.getIndexSwapGem();
+            }
+            if (maxSword != null)
+            {
+                return maxSword.getIndexSwapGem();
+            }
             return listMatchGem[0].getIndexSwapGem();
+        }
+
+        public int? getIndexGem(HashSet<GemType> gemTypes)
+        {
+            var tempGems = new List<Gem>(gems);
+
+            var ls = new List<int>() { -1, 1, 7, -7, 8, -8, 9, -9 };
+            var lsObjs = new List<GemWithIndex>();
+
+            var x = 8;
+            var max = 64;
+            for (int i = 0; i < max; i++)
+            {
+                if (i <= x | i % x == 0 | (i + 1) % x == 0 | i + x >= max)
+                {
+                    continue;
+                }
+
+                var countSword = tempGems[i].type == GemType.SWORD ? 1 : 0;
+                var gemModifier = listGemModifier.Contains(tempGems[i].modifier) ? 1 : 0;
+                var lsType = new List<GemType>() { };
+                foreach (var item in ls)
+                {
+                    lsType.Add((GemType)tempGems[i + item].type);
+                    if (tempGems[i + item].type == GemType.SWORD)
+                    {
+                        countSword++;
+                    }
+                    if (listGemModifier.Contains(tempGems[i + item].modifier))
+                    {
+                        gemModifier++;
+                    }
+                }
+                var isBonusTurn = lsType.GroupBy(x => x).Select(x => new { key = x.Key, value = x.Count() }).Any(x => gemTypes.Contains(x.key) && x.value >= 5);
+                var obj = new GemWithIndex
+                {
+                    index = i,
+                    countSword = countSword,
+                    gemModifier = gemModifier,
+                    isBonusTurn = isBonusTurn
+                };
+                lsObjs.Add(obj);
+            }
+
+            var maxSword = lsObjs.Max(x => x.countSword);
+            var index = lsObjs.Where(x => x.countSword >= 3 && x.countSword == maxSword).OrderByDescending(x => x.gemModifier).FirstOrDefault()?.index;
+            if (index == null)
+            {
+                index = lsObjs.Where(x => x.gemModifier > 0).OrderByDescending(x => x.gemModifier).ThenBy(x => x.countSword).FirstOrDefault()?.index;
+            }
+            if (index == null)
+            {
+                index = lsObjs.Where(x => x.isBonusTurn).FirstOrDefault()?.index;
+            }
+
+            Console.WriteLine("index gems:------------------------------------------------------------------- " + index);
+            return index;
         }
 
         private List<GemSwapInfo> suggestMatch() {
@@ -92,7 +209,9 @@ namespace bot {
 
             swap(currentGem, swapGem);
             if (matchGems.Count > 0) {
-                listMatchGem.Add(new GemSwapInfo(currentGem.index, swapGem.index, matchGems.Count, currentGem.type));
+                listMatchGem.Add(new GemSwapInfo(currentGem.index, swapGem.index, matchGems.Count, currentGem.type, 
+                    (listGemModifier.Contains(currentGem.modifier) | listGemModifier.Contains(swapGem.modifier))
+                    ));
             }
         }
 
@@ -191,4 +310,13 @@ namespace bot {
             return null;
         }
     }
+
+    public class GemWithIndex
+    {
+        public int? index { get; set; }
+        public int countSword { get; set; }
+        public int gemModifier { get; set; }
+        public bool isBonusTurn { get; set; }
+    }
 }
+

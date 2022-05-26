@@ -14,10 +14,11 @@ namespace bot
         private SmartFox sfs;
         private const string IP = "172.16.100.112";
         // private const string IP = "10.10.10.18";
-        private const string username = "trung.hoangdinh";
+        private const string username = "sao.kirito";
 
-        private const string token = "bot";
-
+        //private const string token = "eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJhbmgubmd1eWVudGhpaG9uZyIsImF1dGgiOiJST0xFX1VTRVIiLCJMQVNUX0xPR0lOX1RJTUUiOjE2NTI4NTc4MjY1MzAsImV4cCI6MTY1Mjk0NDIyNn0.APDcJTDo7RrnIxL8ChHS_HyUXDxDRyBSj68txmkWtFpC3ISUFgqBESmKiW203hShaDF6wLKBwrlb0tekiJbKQg";
+        private const string token = "eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJ0b2FpLm5ndXllbmNvbmciLCJhdXRoIjoiUk9MRV9VU0VSIiwiTEFTVF9MT0dJTl9USU1FIjoxNjUzMDE3Mjc0MTA4LCJleHAiOjE2NTQ4MTcyNzR9.dlmf9Ay6ntGjYfnxmSNySUliIkYYvaN3n-Qq0YzE7UE_lR11WbwAPSYfztK_-NY6rP8zo7DuzBIFsQPWSqDkpw";
+        //private const string token = "bot";
         private const int TIME_INTERVAL_IN_MILLISECONDS = 1000;
         private const int ENEMY_PLAYER_ID = 0;
         private const int BOT_PLAYER_ID = 2;
@@ -249,24 +250,43 @@ namespace bot
             sendExtensionRequest(ConstantCommand.FINISH_TURN, data);
         }
 
-        public void SendCastSkill(Hero heroCastSkill)
+        public void SendCastSkill(Hero heroCastSkill, Hero heroTarget = null, int? index = null)
         {
+            log("SendCastSkill => heroTarget: " + heroTarget?.id);
+            log("SendCastSkill => Index: " + index);
             var data = new SFSObject();
 
             data.PutUtfString("casterId", heroCastSkill.id.ToString());
-            if (heroCastSkill.isHeroSelfSkill())
+
+            if (heroTarget != null)
             {
-                data.PutUtfString("targetId", botPlayer.firstHeroAlive().id.ToString());
+                data.PutUtfString("targetId", heroTarget.id.ToString());
             }
             else
             {
-                data.PutUtfString("targetId", enemyPlayer.firstHeroAlive().id.ToString());
+                if (heroCastSkill.isHeroSelfSkill())
+                {
+                    data.PutUtfString("targetId", botPlayer.firstHeroAlive().id.ToString());
+                }
+                else
+                {
+                    data.PutUtfString("targetId", enemyPlayer.firstHeroAlive().id.ToString());
+                }
             }
 
             data.PutUtfString("selectedGem", selectGem().ToString());
-            data.PutUtfString("gemIndex", new Random().Next(64).ToString());
+
+            if (index != null)
+            {
+                data.PutUtfString("gemIndex", index.ToString());
+            }
+            else
+            {
+                data.PutUtfString("gemIndex", new Random().Next(64).ToString());
+            }
+
             data.PutBool("isTargetAllyOrNot", false);
-            log("sendExtensionRequest()|room:" + room.Name + "|extCmd:" + ConstantCommand.USE_SKILL + "|Hero cast skill: " + heroCastSkill.name);
+            log("sendExtensionRequest()|room:" + room.Name + "|extCmd:" + ConstantCommand.USE_SKILL + "|Hero cast skill: " + heroCastSkill.id);
             sendExtensionRequest(ConstantCommand.USE_SKILL, data);
         }
 

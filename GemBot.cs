@@ -4,6 +4,12 @@ namespace bot
 {
     public class GemBot : BaseBot
     {
+        public List<HeroIdEnum> ap = new List<HeroIdEnum>() { HeroIdEnum.FIRE_SPIRIT, HeroIdEnum.DISPATER}; //1
+        public List<HeroIdEnum> carry = new List<HeroIdEnum>() { HeroIdEnum.THUNDER_GOD, HeroIdEnum.MERMAID }; //2
+        public List<HeroIdEnum> aoe = new List<HeroIdEnum>() { HeroIdEnum.AIR_SPIRIT, HeroIdEnum.CERBERUS }; //3
+        public List<HeroIdEnum> buff = new List<HeroIdEnum>() { HeroIdEnum.MONK, HeroIdEnum.SEA_SPIRIT };//4
+        public List<HeroIdEnum> tank = new List<HeroIdEnum>() { HeroIdEnum.ELIZAH, HeroIdEnum.SKELETON };//5
+        public List<HeroIdEnum> imba = new List<HeroIdEnum>() { HeroIdEnum.CERBERUS, HeroIdEnum.SEA_GOD };//0
         internal void Load()
         {
             Console.WriteLine("Bot.Load()");
@@ -36,9 +42,13 @@ namespace bot
             {
                 enemyPlayer.heroes.Add(new Hero(enemyPlayerHero.GetSFSObject(i)));
             }
-
             // Gems
-            grid = new Grid(gameSession.GetSFSArray("gems"), null, botPlayer.getRecommendGemType());
+            grid = new Grid(
+                                gameSession.GetSFSArray("gems"), 
+                                null,
+                                botPlayer.heroes, 
+                                enemyPlayer.heroes
+                           );
             currentPlayerId = gameSession.GetInt("currentPlayerId");
             log("StartGame ");
 
@@ -76,6 +86,7 @@ namespace bot
             }
             // update gem
             grid.gemTypes = botPlayer.getRecommendGemType();
+            // grid.enemyGemTypes = enemyPlayer.getRecommendGemType();
 
             ISFSArray gemCodes = lastSnapshot.GetSFSArray("gems");
             ISFSArray gemModifiers = lastSnapshot.GetSFSArray("gemModifiers");
@@ -110,12 +121,68 @@ namespace bot
                 return;
             }
 
-            Hero heroFullMana = botPlayer.anyHeroFullMana();
-            if (heroFullMana != null)
+            var enemyheroesAlive = enemyPlayer.getHeroesAlive();
+            var myheroesAlive = botPlayer.getHeroesAlive();
+            var anyHeroCarry = enemyheroesAlive.Any(x => carry.Contains(x.id));
+            var anyHeroBuff = enemyheroesAlive.Any(x => buff.Contains(x.id));
+            var heroAP = enemyheroesAlive.Where(x => ap.Contains(x.id)).FirstOrDefault();
+            var heroImba = enemyheroesAlive.Where(x => imba.Contains(x.id)).FirstOrDefault();
+            var enemyHeroMaxAttack = enemyPlayer.getHeroMaxAttack();
+            var enemyTotalHp = enemyPlayer.getTotalHp();
+            
+            var heroesFullMana = botPlayer.getHeroesFullMana();
+
+            if (heroesFullMana.Any(x => buff.Contains(x.id)))
             {
-                TaskSchedule(delaySwapGem, _ => SendCastSkill(heroFullMana));
+                var myheroCarryOrAoe = myheroesAlive.FirstOrDefault(x => carry.Contains(x.id) | aoe.Contains(x.id));
+                TaskSchedule(delaySwapGem, _ => SendCastSkill(heroesFullMana.FirstOrDefault(), myheroCarryOrAoe));
                 return;
             }
+            foreach (var heroFullMana in heroesFullMana)
+            {
+                log("heroFullMana Id: " + heroFullMana.id);
+                if (heroFullMana.attack >= enemyTotalHp)
+                {
+                    TaskSchedule(delaySwapGem, _ => SendCastSkill(heroFullMana));
+                    return;
+                }
+                if (ap.Contains(heroFullMana.id)) 
+                {
+                    if (heroImba != null)
+                    {
+                        TaskSchedule(delaySwapGem, _ => SendCastSkill(heroFullMana, heroImba));
+                        return;
+                    }
+                    if (heroAP != null)
+                    {
+                        TaskSchedule(delaySwapGem, _ => SendCastSkill(heroFullMana, heroAP));
+                        return;
+                    }
+
+                    if (enemyheroesAlive.Count() == 1 | enemyHeroMaxAttack.attack > 10 | (!anyHeroBuff && !anyHeroCarry))
+                    {
+                        TaskSchedule(delaySwapGem, _ => SendCastSkill(heroFullMana, enemyHeroMaxAttack));
+                        return;
+                    }
+                    continue;
+                }
+                if (heroFullMana.id == HeroIdEnum.AIR_SPIRIT)
+                {
+                    log("HeroIdEnum.AIR_SPIRIT");
+                    var gemTypes = botPlayer.getRecommendGemType();
+
+                    var index = grid.getIndexGem(gemTypes);
+                    if (index != null)
+                    {
+                        TaskSchedule(delaySwapGem, _ => SendCastSkill(heroFullMana, null, index));
+                        return;
+                    }
+                    continue;
+                }
+                TaskSchedule(delaySwapGem, _ => SendCastSkill(heroFullMana, null));
+                return;
+            }
+
             TaskSchedule(delaySwapGem, _ => SendSwapGem());
 
 
