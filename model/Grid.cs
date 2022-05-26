@@ -40,16 +40,6 @@ namespace bot {
 
         public Pair<int> recommendSwapGem() {
             List<GemSwapInfo> listMatchGem = suggestMatch();
-            //get gemtype myheros
-            HashSet<GemType> myHeroGemType = new HashSet<GemType>();
-            var myHeroAlive = myheroes.Where(x => x.isAlive() && !x.isFullMana());//.Reverse();
-            foreach (var hero in myHeroAlive)
-            {
-                foreach (var gt in hero.gemTypes)
-                {
-                    myHeroGemType.Add((GemType)gt);
-                }
-            }
             //get gemtype enemyheros
             HashSet<GemType> enemyHeroGemType = new HashSet<GemType>();
             var enemyHeroAlive = enemyheroes.Where(x => x.isAlive()).OrderBy(x => x.isFullMana());
@@ -58,6 +48,23 @@ namespace bot {
                 foreach (var gt in hero.gemTypes)
                 {
                     enemyHeroGemType.Add((GemType)gt);
+                }
+            }
+
+            //get gemtype myheros
+            HashSet<GemType> myHeroGemType = new HashSet<GemType>();
+            var myHeroAlive = myheroes.Where(x => x.isAlive() && !x.isFullMana());
+
+            if (enemyHeroAlive.Any(x => x.id == HeroIdEnum.FIRE_SPIRIT))
+            {
+                myHeroAlive = myHeroAlive.Reverse();
+            }
+
+            foreach (var hero in myHeroAlive)
+            {
+                foreach (var gt in hero.gemTypes)
+                {
+                    myHeroGemType.Add((GemType)gt);
                 }
             }
 
