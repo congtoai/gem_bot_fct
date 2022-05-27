@@ -56,24 +56,25 @@ namespace bot {
             //get gemtype myheros
             HashSet<GemType> myHeroGemType = new HashSet<GemType>();
             var myHeroAlive = myheroes.Where(x => x.isAlive() && !x.isFullMana());
-            if (myHeroAlive.Any(x => x.id == HeroIdEnum.AIR_SPIRIT))
-            {
-                myHeroGemType.Add(GemType.BLUE);
-            }
 
-            if (enemyHeroAlive.Any(x => x.id == HeroIdEnum.FIRE_SPIRIT) && countRedGems >= 9)
+            //if (enemyHeroAlive.Any(x => x.id == HeroIdEnum.FIRE_SPIRIT | x.id == HeroIdEnum.CERBERUS))
+            //{
+            //    myHeroAlive = myHeroAlive.Reverse();
+            //}
+
+            if (myHeroAlive.Any(x => x.id == HeroIdEnum.FIRE_SPIRIT && !x.isFullMana()) && enemyHeroAlive.Any(x => x.id == HeroIdEnum.CERBERUS))
             {
                 myHeroAlive = myHeroAlive.Reverse();
             }
 
             foreach (var hero in myHeroAlive)
             {
-                if (hero.id == HeroIdEnum.FIRE_SPIRIT)
-                {
-                    myHeroGemType.Add(GemType.PURPLE);
-                    myHeroGemType.Add(GemType.RED);
-                    continue;
-                }
+                //if (hero.id == HeroIdEnum.FIRE_SPIRIT)
+                //{
+                //    myHeroGemType.Add(GemType.PURPLE);
+                //    myHeroGemType.Add(GemType.RED);
+                //    continue;
+                //}
                 foreach (var gt in hero.gemTypes)
                 {
                     myHeroGemType.Add((GemType)gt);
