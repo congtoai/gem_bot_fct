@@ -51,17 +51,25 @@ namespace bot {
                 }
             }
 
+            var tempGems = new List<Gem>(gems);
+            var countRedGems = tempGems.Count(x => x.type == GemType.RED);
             //get gemtype myheros
             HashSet<GemType> myHeroGemType = new HashSet<GemType>();
             var myHeroAlive = myheroes.Where(x => x.isAlive() && !x.isFullMana());
 
-            if (enemyHeroAlive.Any(x => x.id == HeroIdEnum.FIRE_SPIRIT))
+            if (enemyHeroAlive.Any(x => x.id == HeroIdEnum.FIRE_SPIRIT) && countRedGems >= 9)
             {
                 myHeroAlive = myHeroAlive.Reverse();
             }
 
             foreach (var hero in myHeroAlive)
             {
+                if (hero.id == HeroIdEnum.FIRE_SPIRIT)
+                {
+                    myHeroGemType.Add(GemType.PURPLE);
+                    myHeroGemType.Add(GemType.RED);
+                    continue;
+                }
                 foreach (var gt in hero.gemTypes)
                 {
                     myHeroGemType.Add((GemType)gt);
@@ -72,13 +80,15 @@ namespace bot {
                 return new Pair<int>(-1, -1);
             }
 
-            GemSwapInfo haveFiveGemType = listMatchGem.Where(gemMatch => myHeroGemType.Contains(gemMatch.type) && gemMatch.sizeMatch > 4).OrderByDescending(x => x.hasGemModifier).FirstOrDefault();
-            GemSwapInfo gemModifier = listMatchGem.Where(gemMatch => myHeroGemType.Contains(gemMatch.type) && gemMatch.hasGemModifier).OrderByDescending(x => x.sizeMatch).FirstOrDefault();
+            GemSwapInfo haveFiveGemType = listMatchGem.Where(x => myHeroGemType.Contains(x.type) && x.sizeMatch > 4).OrderByDescending(x => x.hasGemModifier).FirstOrDefault();
+            GemSwapInfo haveFiveGemType1 = listMatchGem.Where(x => enemyHeroGemType.Contains(x.type) && x.sizeMatch > 4).OrderByDescending(x => x.hasGemModifier).FirstOrDefault();
+
+            GemSwapInfo gemModifier = listMatchGem.Where(x => myHeroGemType.Contains(x.type) && x.hasGemModifier).OrderByDescending(x => x.sizeMatch).FirstOrDefault();
 
             GemSwapInfo maxGemType = listMatchGem.Where(gemMatch => myHeroGemType.Contains(gemMatch.type)).OrderByDescending(x => x.sizeMatch).FirstOrDefault();
 
-            Console.WriteLine("maxGemType.sizeMatch" + maxGemType?.sizeMatch);
-            Console.WriteLine("gemModifier" + gemModifier?.type);
+            Console.WriteLine("maxGemType.sizeMatch: " + maxGemType?.sizeMatch);
+            Console.WriteLine("gemModifier: " + gemModifier?.type);
 
             GemSwapInfo maxSword = listMatchGem.Where(gemMatch => gemMatch.type == GemType.SWORD).OrderByDescending(x => x.sizeMatch).FirstOrDefault();
 
@@ -89,6 +99,10 @@ namespace bot {
             if (haveFiveGemType != null)
             {
                 return haveFiveGemType.getIndexSwapGem();
+            }
+            if (haveFiveGemType1 != null)
+            {
+                return haveFiveGemType1.getIndexSwapGem();
             }
             if (myheroes.Where(x => x.isAlive()).FirstOrDefault()?.attack >= enemyheroes.Where(x => x.isAlive()).FirstOrDefault()?.hp | 
                 myheroes.Where(x => x.isAlive()).FirstOrDefault()?.hp <= enemyheroes.Where(x => x.isAlive()).FirstOrDefault()?.attack)
