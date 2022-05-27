@@ -52,15 +52,6 @@ namespace bot {
             return rs;
         }
 
-        public Hero getHeroMaxAttack()
-        {
-            var rs = heroes.Where(hero =>
-                    hero.isAlive()
-                 ).OrderByDescending(x => x.attack).FirstOrDefault();
-
-            return rs;
-        }
-
         public Hero getHeroMaxHp()
         {
             var rs  = heroes.OrderByDescending(x => x.hp).FirstOrDefault();

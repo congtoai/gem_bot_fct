@@ -254,40 +254,47 @@ namespace bot
         {
             log("SendCastSkill => heroTarget: " + heroTarget?.id);
             log("SendCastSkill => Index: " + index);
-            var data = new SFSObject();
-
-            data.PutUtfString("casterId", heroCastSkill.id.ToString());
-
-            if (heroTarget != null)
+            try
             {
-                data.PutUtfString("targetId", heroTarget.id.ToString());
-            }
-            else
-            {
-                if (heroCastSkill.isHeroSelfSkill())
+                var data = new SFSObject();
+
+                data.PutUtfString("casterId", heroCastSkill.id.ToString());
+
+                if (heroTarget != null)
                 {
-                    data.PutUtfString("targetId", botPlayer.firstHeroAlive().id.ToString());
+                    data.PutUtfString("targetId", heroTarget.id.ToString());
                 }
                 else
                 {
-                    data.PutUtfString("targetId", enemyPlayer.firstHeroAlive().id.ToString());
+                    if (heroCastSkill.isHeroSelfSkill())
+                    {
+                        data.PutUtfString("targetId", botPlayer.firstHeroAlive().id.ToString());
+                    }
+                    else
+                    {
+                        data.PutUtfString("targetId", enemyPlayer.firstHeroAlive().id.ToString());
+                    }
                 }
+
+                data.PutUtfString("selectedGem", selectGem().ToString());
+
+                if (index != null)
+                {
+                    data.PutUtfString("gemIndex", index.ToString());
+                }
+                else
+                {
+                    data.PutUtfString("gemIndex", new Random().Next(64).ToString());
+                }
+
+                data.PutBool("isTargetAllyOrNot", false);
+                log("sendExtensionRequest()|room:" + room.Name + "|extCmd:" + ConstantCommand.USE_SKILL + "|Hero cast skill: " + heroCastSkill.id);
+                sendExtensionRequest(ConstantCommand.USE_SKILL, data);
             }
-
-            data.PutUtfString("selectedGem", selectGem().ToString());
-
-            if (index != null)
+            catch
             {
-                data.PutUtfString("gemIndex", index.ToString());
+                log("loi ok: --------------------------------------------------------- ");
             }
-            else
-            {
-                data.PutUtfString("gemIndex", new Random().Next(64).ToString());
-            }
-
-            data.PutBool("isTargetAllyOrNot", false);
-            log("sendExtensionRequest()|room:" + room.Name + "|extCmd:" + ConstantCommand.USE_SKILL + "|Hero cast skill: " + heroCastSkill.id);
-            sendExtensionRequest(ConstantCommand.USE_SKILL, data);
         }
 
         public void SendSwapGem()

@@ -56,6 +56,10 @@ namespace bot {
             //get gemtype myheros
             HashSet<GemType> myHeroGemType = new HashSet<GemType>();
             var myHeroAlive = myheroes.Where(x => x.isAlive() && !x.isFullMana());
+            if (myHeroAlive.Any(x => x.id == HeroIdEnum.AIR_SPIRIT))
+            {
+                myHeroGemType.Add(GemType.BLUE);
+            }
 
             if (enemyHeroAlive.Any(x => x.id == HeroIdEnum.FIRE_SPIRIT) && countRedGems >= 9)
             {

@@ -127,7 +127,11 @@ namespace bot
             var anyHeroBuff = enemyheroesAlive.Any(x => buff.Contains(x.id));
             var heroAP = enemyheroesAlive.Where(x => ap.Contains(x.id)).FirstOrDefault();
             var heroImba = enemyheroesAlive.Where(x => imba.Contains(x.id)).FirstOrDefault();
-            var enemyHeroMaxAttack = enemyPlayer.getHeroMaxAttack();
+            var enemyHeroMaxAttack = enemyPlayer.heroes.Where(x =>
+                        ( carry.Contains(x.id) | aoe.Contains(x.id) ) &&
+                        x.isAlive()
+                     ).OrderByDescending(x => x.attack).FirstOrDefault();
+
             var enemyTotalHp = enemyPlayer.getTotalHp();
             
             var heroesFullMana = botPlayer.getHeroesFullMana();
@@ -136,72 +140,76 @@ namespace bot
 
             //var anyAIRSPIRIT = myheroesAlive.Any(x => x.id == HeroIdEnum.AIR_SPIRIT && !x.isFullMana() && x.attack >= 11);
             //var anyEnemyFireHero = enemyheroesAlive.Any(x => x.id == HeroIdEnum.FIRE_SPIRIT);
-
-            if (heroesFullMana.Any(x => buff.Contains(x.id)))
+            try
             {
-                if (myAIRSPIRIT == null)
+                if (heroesFullMana.Any(x => buff.Contains(x.id)))
                 {
-                    TaskSchedule(delaySwapGem, _ => SendCastSkill(heroesFullMana.FirstOrDefault()));
+                    if (myAIRSPIRIT == null)
+                    {
+                        TaskSchedule(delaySwapGem, _ => SendCastSkill(heroesFullMana.FirstOrDefault()));
+                        return;
+                    }
+                    if (myAIRSPIRIT?.isFullMana() == true | heroesFullMana.FirstOrDefault()?.hp < 10)
+                    {
+                        var myheroCarryOrAoe = myheroesAlive.FirstOrDefault(x => carry.Contains(x.id) | aoe.Contains(x.id));
+                        TaskSchedule(delaySwapGem, _ => SendCastSkill(heroesFullMana.FirstOrDefault(), myheroCarryOrAoe));
+                        return;
+                    }
+                }
+                foreach (var heroFullMana in heroesFullMana)
+                {
+                    log("heroFullMana Id: " + heroFullMana.id);
+                    if (buff.Contains(heroFullMana.id))
+                    {
+                        continue;
+                    }
+                    if (heroFullMana.attack >= enemyTotalHp)
+                    {
+                        TaskSchedule(delaySwapGem, _ => SendCastSkill(heroFullMana));
+                        return;
+                    }
+                    if (ap.Contains(heroFullMana.id))
+                    {
+                        if (heroImba != null && heroImba?.hp >= 22)
+                        {
+                            TaskSchedule(delaySwapGem, _ => SendCastSkill(heroFullMana, heroImba));
+                            return;
+                        }
+                        if (heroAP != null && heroAP?.hp >= 22)
+                        {
+                            TaskSchedule(delaySwapGem, _ => SendCastSkill(heroFullMana, heroAP));
+                            return;
+                        }
+                        if (enemyheroesAlive.Count() == 1 | enemyHeroMaxAttack.attack > 10 | !anyHeroBuff | heroFullMana.hp < 10)
+                        {
+                            TaskSchedule(delaySwapGem, _ => SendCastSkill(heroFullMana, enemyHeroMaxAttack));
+                            return;
+                        }
+                        continue;
+                    }
+                    if (heroFullMana.id == HeroIdEnum.AIR_SPIRIT)
+                    {
+                        log("HeroIdEnum.AIR_SPIRIT");
+                        var gemTypes = botPlayer.getRecommendGemType();
+
+                        var index = grid.getIndexGem(gemTypes);
+                        if (index != null)
+                        {
+                            TaskSchedule(delaySwapGem, _ => SendCastSkill(heroFullMana, null, index));
+                            return;
+                        }
+                        continue;
+                    }
+                    TaskSchedule(delaySwapGem, _ => SendCastSkill(heroFullMana, null));
                     return;
                 }
-                if (myAIRSPIRIT?.isFullMana() == true | heroesFullMana.FirstOrDefault()?.hp < 10)
-                {
-                    var myheroCarryOrAoe = myheroesAlive.FirstOrDefault(x => carry.Contains(x.id) | aoe.Contains(x.id));
-                    TaskSchedule(delaySwapGem, _ => SendCastSkill(heroesFullMana.FirstOrDefault(), myheroCarryOrAoe));
-                    return;
-                }
+
+                TaskSchedule(delaySwapGem, _ => SendSwapGem());
             }
-            foreach (var heroFullMana in heroesFullMana)
+            catch
             {
-                log("heroFullMana Id: " + heroFullMana.id);
-                if (buff.Contains(heroFullMana.id))
-                {
-                    continue;
-                }
-                if (heroFullMana.attack >= enemyTotalHp)
-                {
-                    TaskSchedule(delaySwapGem, _ => SendCastSkill(heroFullMana));
-                    return;
-                }
-                if (ap.Contains(heroFullMana.id)) 
-                {
-                    if (heroImba != null && heroImba?.hp >= 22)
-                    {
-                        TaskSchedule(delaySwapGem, _ => SendCastSkill(heroFullMana, heroImba));
-                        return;
-                    }
-                    if (heroAP != null && heroAP?.hp >= 22)
-                    {
-                        TaskSchedule(delaySwapGem, _ => SendCastSkill(heroFullMana, heroAP));
-                        return;
-                    }
-                    if (enemyheroesAlive.Count() == 1 | enemyHeroMaxAttack.attack > 10 | !anyHeroBuff | heroFullMana.hp < 10)
-                    {
-                        TaskSchedule(delaySwapGem, _ => SendCastSkill(heroFullMana, enemyHeroMaxAttack));
-                        return;
-                    }
-                    continue;
-                }
-                if (heroFullMana.id == HeroIdEnum.AIR_SPIRIT)
-                {
-                    log("HeroIdEnum.AIR_SPIRIT");
-                    var gemTypes = botPlayer.getRecommendGemType();
-
-                    var index = grid.getIndexGem(gemTypes);
-                    if (index != null)
-                    {
-                        TaskSchedule(delaySwapGem, _ => SendCastSkill(heroFullMana, null, index));
-                        return;
-                    }
-                    continue;
-                }
-                TaskSchedule(delaySwapGem, _ => SendCastSkill(heroFullMana, null));
-                return;
+                TaskSchedule(delaySwapGem, _ => SendSwapGem());
             }
-
-            TaskSchedule(delaySwapGem, _ => SendSwapGem());
-
-
         }
 
         protected bool isBotTurn()
