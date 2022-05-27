@@ -132,14 +132,24 @@ namespace bot
             
             var heroesFullMana = botPlayer.getHeroesFullMana();
 
-            var anyAIRSPIRIT = myheroesAlive.Any(x => x.id == HeroIdEnum.AIR_SPIRIT && !x.isFullMana() && x.attack >= 11);
+            var myAIRSPIRIT = myheroesAlive.FirstOrDefault(x => x.id == HeroIdEnum.AIR_SPIRIT);
 
-            if (heroesFullMana.Any(x => buff.Contains(x.id)) && 
-                ( (!anyAIRSPIRIT && !enemyheroesAlive.Any(x => x.id == HeroIdEnum.FIRE_SPIRIT)) | enemyheroesAlive.Count() == 1) )
+            //var anyAIRSPIRIT = myheroesAlive.Any(x => x.id == HeroIdEnum.AIR_SPIRIT && !x.isFullMana() && x.attack >= 11);
+            //var anyEnemyFireHero = enemyheroesAlive.Any(x => x.id == HeroIdEnum.FIRE_SPIRIT);
+
+            if (heroesFullMana.Any(x => buff.Contains(x.id)))
             {
-                var myheroCarryOrAoe = myheroesAlive.FirstOrDefault(x => carry.Contains(x.id) | aoe.Contains(x.id));
-                TaskSchedule(delaySwapGem, _ => SendCastSkill(heroesFullMana.FirstOrDefault(), myheroCarryOrAoe));
-                return;
+                if (myAIRSPIRIT == null)
+                {
+                    TaskSchedule(delaySwapGem, _ => SendCastSkill(heroesFullMana.FirstOrDefault()));
+                    return;
+                }
+                if (myAIRSPIRIT?.isFullMana() == true | heroesFullMana.FirstOrDefault()?.hp < 10)
+                {
+                    var myheroCarryOrAoe = myheroesAlive.FirstOrDefault(x => carry.Contains(x.id) | aoe.Contains(x.id));
+                    TaskSchedule(delaySwapGem, _ => SendCastSkill(heroesFullMana.FirstOrDefault(), myheroCarryOrAoe));
+                    return;
+                }
             }
             foreach (var heroFullMana in heroesFullMana)
             {
@@ -155,18 +165,17 @@ namespace bot
                 }
                 if (ap.Contains(heroFullMana.id)) 
                 {
-                    if (heroImba != null)
+                    if (heroImba != null && heroImba?.hp >= 22)
                     {
                         TaskSchedule(delaySwapGem, _ => SendCastSkill(heroFullMana, heroImba));
                         return;
                     }
-                    if (heroAP != null)
+                    if (heroAP != null && heroAP?.hp >= 22)
                     {
                         TaskSchedule(delaySwapGem, _ => SendCastSkill(heroFullMana, heroAP));
                         return;
                     }
-
-                    if (enemyheroesAlive.Count() == 1 | enemyHeroMaxAttack.attack > 10 | (!anyHeroBuff && !anyHeroCarry))
+                    if (enemyheroesAlive.Count() == 1 | enemyHeroMaxAttack.attack > 10 | !anyHeroBuff | heroFullMana.hp < 10)
                     {
                         TaskSchedule(delaySwapGem, _ => SendCastSkill(heroFullMana, enemyHeroMaxAttack));
                         return;
